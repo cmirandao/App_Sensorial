@@ -1,7 +1,6 @@
 package com.example.app_sensorial.ui.views
 
 import android.app.Activity
-import android.content.Intent
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,11 +21,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 
+import com.example.app_sensorial.utils.iniciarReconocimientoSeguro
+
 @Composable
 fun ComunicadorView(
     onLogout: () -> Unit
 ) {
     var textoEscrito by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
     // ==========================================
@@ -60,6 +62,7 @@ fun ComunicadorView(
             if (!spokenText.isNullOrEmpty()) {
                 val espacio = if (textoEscrito.isNotEmpty() && !textoEscrito.endsWith(" ")) " " else ""
                 textoEscrito += espacio + spokenText
+                errorMessage = ""
             }
         }
     }
@@ -99,6 +102,17 @@ fun ComunicadorView(
                             .height(120.dp),
                         maxLines = 4
                     )
+
+                    if (errorMessage.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(
@@ -114,16 +128,14 @@ fun ComunicadorView(
                         }
 
                         Button(onClick = {
-                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Habla ahora para transcribir...")
-                            }
-                            try {
-                                speechLauncher.launch(intent)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
+                            context.iniciarReconocimientoSeguro(
+                                launchAction = { intent ->
+                                    speechLauncher.launch(intent)
+                                },
+                                onError = { exception ->
+                                    errorMessage = "Error al iniciar micrófono: Verifica tu conexión a internet."
+                                }
+                            )
                         }) {
                             Text("Dictar")
                         }
@@ -131,7 +143,10 @@ fun ComunicadorView(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    OutlinedButton(onClick = { textoEscrito = "" }) {
+                    OutlinedButton(onClick = {
+                        textoEscrito = ""
+                        errorMessage = ""
+                    }) {
                         Text("Borrar todo")
                     }
 

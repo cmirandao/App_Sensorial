@@ -47,7 +47,7 @@ fun AppNavigation() {
             LoginView(
                 onLoginSuccess = { navController.navigate("comunicador") },
                 onNavigateToRegister = { navController.navigate("registro") },
-                onNavigateToRecover = { navController.navigate("recuperar") }
+                onNavigateToRecovery = { navController.navigate("recuperar") }
             )
         }
 

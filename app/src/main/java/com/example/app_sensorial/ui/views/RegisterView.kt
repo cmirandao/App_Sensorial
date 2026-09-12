@@ -4,18 +4,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
-import com.example.app_sensorial.data.Usuario
-import com.example.app_sensorial.data.listaUsuarios
+import androidx.compose.ui.unit.dp
+import com.example.app_sensorial.data.User
+import com.example.app_sensorial.data.userRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,25 +29,23 @@ fun RegisterView(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-
-    // Check list
-    var acceptTerms by remember { mutableStateOf(false) }
+    var disclaimer by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Radio Buttons
-    val roles = listOf("Usuario Sordo / Hipoacúsico", "Usuario Oyente")
-    var selectedRole by remember { mutableStateOf(roles[0]) }
+    // Opciones del Radio Button
+    val profileOptions = listOf("Usuario Sordo / Hipoacúsico", "Usuario Oyente")
+    var selectedProfile by remember { mutableStateOf(profileOptions[0]) }
 
-    // Combo box (ExposedDropdownMenuBox)
-    var expanded by remember { mutableStateOf(false) }
-    val niveles = listOf("Sordera profunda", "Hipoacusia severa", "Hipoacusia moderada", "Hipoacusia leve", "Ninguna")
-    var selectedNivel by remember { mutableStateOf(niveles[0]) }
+    // Opciones del Combo Box
+    val hearingLevels = listOf("Audición Normal", "Sordera Leve", "Sordera Moderada", "Sordera Severa", "Sordera Profunda")
+    var expandedLevel by remember { mutableStateOf(false) }
+    var selectedLevel by remember { mutableStateOf(hearingLevels[4]) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Registro de Usuario", style = MaterialTheme.typography.headlineMedium)
@@ -60,85 +58,58 @@ fun RegisterView(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            value = password, onValueChange = { password = it }, label = { Text("Contraseña") },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar")
+                    Icon(if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, contentDescription = null)
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
+            }, modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("Confirmar contraseña") },
+            value = confirmPassword, onValueChange = { confirmPassword = it }, label = { Text("Confirmar contraseña") },
             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Alternar visibilidad")
+                    Icon(if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, contentDescription = null)
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
+            }, modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Radio Buttons
         Text("Selecciona tu perfil:", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.align(Alignment.Start))
         Column(Modifier.selectableGroup().fillMaxWidth()) {
-            roles.forEach { rol ->
+            profileOptions.forEach { profile ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = (rol == selectedRole),
-                        onClick = {
-                            selectedRole = rol
-                            if (rol == roles[1]) {
-                                selectedNivel = "Ninguna"
-                            } else {
-                                selectedNivel = niveles[0]
-                            }
-                        }
-                    )
-                    Text(text = rol)
+                    RadioButton(selected = (profile == selectedProfile), onClick = { selectedProfile = profile })
+                    Text(text = profile)
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        ExposedDropdownMenuBox(
+            expanded = expandedLevel,
+            onExpandedChange = { expandedLevel = !expandedLevel },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = selectedLevel, onValueChange = {}, readOnly = true, label = { Text("Nivel Auditivo") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedLevel) },
+                modifier = Modifier.menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+            )
+            ExposedDropdownMenu(expanded = expandedLevel, onDismissRequest = { expandedLevel = false }) {
+                hearingLevels.forEach { level ->
+                    DropdownMenuItem(text = { Text(level) }, onClick = { selectedLevel = level; expandedLevel = false })
                 }
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Combo Box
-        if (selectedRole == roles[0]) {
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                OutlinedTextField(
-                    value = selectedNivel,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Nivel Auditivo") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    niveles.forEach { nivel ->
-                        if (nivel != "Ninguna") {
-                            DropdownMenuItem(
-                                text = { Text(nivel) },
-                                onClick = { selectedNivel = nivel; expanded = false }
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // Check List
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Checkbox(checked = acceptTerms, onCheckedChange = { acceptTerms = it })
+            Checkbox(checked = disclaimer, onCheckedChange = { disclaimer = it })
             Text("Acepto los términos de accesibilidad")
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -150,18 +121,23 @@ fun RegisterView(
 
         Button(
             onClick = {
-                if (name.isBlank() || username.isBlank() || password.isBlank()) {
-                    errorMessage = "Todos los campos son obligatorios"
-                } else if (password.length < 6 || !password.any { it.isUpperCase() } || !password.any { it.isLowerCase() } || !password.any { it.isDigit() }) {
-                    errorMessage = "La contraseña debe tener mín. 6 caracteres, una mayúscula, una minúscula y un número"
-                } else if (password != confirmPassword) {
-                    errorMessage = "Las contraseñas no coinciden"
-                } else if (!acceptTerms) {
-                    errorMessage = "Debes aceptar los términos"
-                } else {
-                    errorMessage = ""
-                    listaUsuarios.add(Usuario(name, username, password, selectedNivel))
-                    onRegisterSuccess()
+                when {
+                    name.isBlank() || username.isBlank() || password.isBlank() -> errorMessage = "Todos los campos son obligatorios."
+                    password.length < 6 || !password.any { it.isUpperCase() } || !password.any { it.isLowerCase() } || !password.any { it.isDigit() } ->
+                        errorMessage = "La contraseña debe tener mín. 6 caracteres, una mayúscula, una minúscula y un número."
+                    password != confirmPassword -> errorMessage = "Las contraseñas no coinciden."
+                    !disclaimer -> errorMessage = "Debes aceptar los términos y condiciones."
+                    else -> {
+                        val newUser = User(name, username, password, selectedProfile)
+                        val (success, message) = userRepository.registerUser(newUser)
+
+                        if (success) {
+                            errorMessage = ""
+                            onRegisterSuccess()
+                        } else {
+                            errorMessage = message
+                        }
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -169,7 +145,8 @@ fun RegisterView(
             Text("Registrarme")
         }
 
-        TextButton(onClick = onNavigateBack) {
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
             Text("Volver al Login")
         }
     }

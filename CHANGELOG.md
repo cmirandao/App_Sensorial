@@ -1,5 +1,17 @@
 # Changelog - App Sensorial
 
+## [2.0] - 2026-09-14
+
+### Añadido
+- **Programación Orientada a Objetos (POO):** Implementación de la clase `UserRepository` para separar la capa de datos y manejar la lógica de registro y autenticación.
+- **Funciones de Extensión y Manejo de Errores:** Creación de `AudioUtils.kt` con la función extendida `Context.iniciarReconocimientoSeguro`, incorporando un bloque `try-catch` puro para evitar cierres inesperados al fallar el Speech-to-Text (sin conexión o incompatibilidad).
+- **Funciones de Orden Superior:** Uso de lambdas pasadas como parámetros para controlar los eventos de éxito y error en la inicialización del micrófono.
+
+### Modificado
+- **Control de Usuarios:** Aplicación de funciones de orden superior (`.any {}`) en el repositorio para garantizar el límite estricto de 5 usuarios y evitar registros duplicados.
+- **Validación de Recuperación:** Actualización de `PassRecoveryView` para validar la existencia real del usuario en el repositorio antes de simular el envío del correo.
+- **Documentación Técnica:** Ampliación detallada del Diagrama y Diccionario EDT, junto con la evidencia explícita de las mitigaciones de riesgos en la arquitectura del código.
+
 ## [1.0] - 2026-08-22
 
 ### Añadido
