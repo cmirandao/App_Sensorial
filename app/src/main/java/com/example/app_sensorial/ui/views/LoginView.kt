@@ -1,8 +1,6 @@
 package com.example.app_sensorial.ui.views
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -17,7 +15,7 @@ import com.example.app_sensorial.data.userRepository
 
 @Composable
 fun LoginView(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (String) -> Unit,
     onNavigateToRegister: () -> Unit,
     onNavigateToRecovery: () -> Unit
 ) {
@@ -25,25 +23,27 @@ fun LoginView(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Iniciar Sesión", style = MaterialTheme.typography.headlineMedium)
+        Text("Iniciar Sesión", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
             label = { Text("Usuario") },
+            enabled = !isLoading,
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = password,
@@ -53,9 +53,11 @@ fun LoginView(
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Alternar visibilidad")
+                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar contraseña")
                 }
             },
+            enabled = !isLoading,
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -65,34 +67,38 @@ fun LoginView(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Button(
-            onClick = {
-                if (username.isBlank() || password.isBlank()) {
-                    errorMessage = "Debes ingresar usuario y contraseña."
-                } else {
-                    if (userRepository.validateLogin(username, password)) {
-                        errorMessage = ""
-                        onLoginSuccess()
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(8.dp))
+        } else {
+            Button(
+                onClick = {
+                    if (username.isBlank() || password.isBlank()) {
+                        errorMessage = "Por favor, ingresa usuario y contraseña"
                     } else {
-                        errorMessage = "Credenciales incorrectas o usuario no registrado."
+                        isLoading = true
+                        errorMessage = ""
+                        userRepository.loginWithFirebase(username.trim(), password) { success, message ->
+                            isLoading = false
+                            if (success) {
+                                onLoginSuccess(username.trim())
+                            } else {
+                                errorMessage = message
+                            }
+                        }
                     }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Ingresar")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ingresar")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedButton(
-            onClick = onNavigateToRegister,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("¿No tienes cuenta? Regístrate aquí")
+        TextButton(onClick = onNavigateToRegister, enabled = !isLoading) {
+            Text("¿No tienes cuenta? Regístrate")
         }
-
-        TextButton(onClick = onNavigateToRecovery) {
+        TextButton(onClick = onNavigateToRecovery, enabled = !isLoading) {
             Text("¿Olvidaste tu contraseña?")
         }
     }

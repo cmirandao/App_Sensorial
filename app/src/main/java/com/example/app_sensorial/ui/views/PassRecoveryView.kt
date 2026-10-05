@@ -12,64 +12,77 @@ import com.example.app_sensorial.data.userRepository
 fun PassRecoveryView(
     onNavigateBack: () -> Unit
 ) {
-    var usernameInput by remember { mutableStateOf("") }
-    var recoveryMessage by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var statusMessage by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("Recuperar Contraseña", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Ingresa tu usuario y te enviaremos las instrucciones.", style = MaterialTheme.typography.bodyMedium)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = usernameInput,
-            onValueChange = { usernameInput = it },
-            label = { Text("Usuario") },
-            modifier = Modifier.fillMaxWidth()
+        Text(
+            text = "Ingresa tu usuario y te enviaremos las instrucciones por correo.",
+            style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                if (usernameInput.isBlank()) {
-                    isError = true
-                    recoveryMessage = "Debes ingresar un usuario válido."
-                } else {
-                    val userExists = userRepository.userExists(usernameInput)
-
-                    if (userExists) {
-                        isError = false
-                        recoveryMessage = "Instrucciones enviadas con éxito a $usernameInput."
-                    } else {
-                        isError = true
-                        recoveryMessage = "El usuario no existe. Por favor, regístrate."
-                    }
-                }
-            },
+        OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Usuario") },
+            enabled = !isLoading,
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Enviar instrucciones")
-        }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
 
-        if (recoveryMessage.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
+        if (statusMessage.isNotEmpty()) {
             Text(
-                text = recoveryMessage,
+                text = statusMessage,
                 color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
             )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(8.dp))
+        } else {
+            Button(
+                onClick = {
+                    val cleanUser = username.trim()
+
+                    if (cleanUser.isBlank()) {
+                        isError = true
+                        statusMessage = "Por favor, ingresa tu usuario."
+                    } else if (!userRepository.userExists(cleanUser)) {
+                        isError = true
+                        statusMessage = "El usuario no existe. Por favor, regístrate."
+                    } else {
+                        isLoading = true
+                        statusMessage = ""
+                        userRepository.sendPasswordReset(cleanUser) { success, message ->
+                            isLoading = false
+                            isError = !success
+                            statusMessage = message
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Enviar instrucciones")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
+        TextButton(onClick = onNavigateBack, enabled = !isLoading) {
             Text("Volver al Login")
         }
     }

@@ -1,5 +1,19 @@
 # Changelog - App Sensorial
 
+## [3.0] - 2026-10-04
+### Añadido
+- **Autenticación:** Integración con Firebase Authentication para registro y login de usuarios.
+- **Base de Datos:** Conexión con Firebase Realtime Database para la permanencia de datos del perfil.
+- **Accesibilidad (Escribir):** Herramienta Text-to-Speech (TTS) nativa para usuarios sordos/hipoacúsicos.
+- **Accesibilidad (Hablar):** Herramienta Speech-to-Text mediante RecognizerIntent de Google.
+- **Geolocalización:** Vista `BuscarDispositivo` con permisos en tiempo real (`ACCESS_FINE_LOCATION` y `ACCESS_COARSE_LOCATION`) usando `FusedLocationProviderClient`.
+- **Pruebas Automatizadas:** Batería de pruebas unitarias y de interfaz (TDD) implementando JUnit, Mockito puro y reglas de Jetpack Compose UI Test.
+- **Diseño:** Nuevo ícono de lanzamiento adaptativo (Adaptive Launcher Icon) personalizado.
+
+### Modificado
+- Refactorización de `UserRepository` para delegar la seguridad y recuperación de contraseñas a Firebase.
+- Actualización de navegación a Jetpack Compose Navigation (`NavHost`) con limpieza de historial (`popUpTo`) en el Login.
+
 ## [2.0] - 2026-09-14
 
 ### Añadido

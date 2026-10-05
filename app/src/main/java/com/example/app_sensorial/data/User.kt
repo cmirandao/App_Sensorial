@@ -1,43 +1,113 @@
 package com.example.app_sensorial.data
+import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.database
 
 data class User(
-    val fullName: String,
-    val username: String,
-    val pass: String,
-    val profileType: String
+    val name: String = "",
+    val username: String = "",
+    val profile: String = "",
+    val hearingLevel: String = ""
 )
 
 class UserRepository {
-    private val registeredUsers: Array<User?> = arrayOfNulls(5)
+    // Instancias de Firebase
+    private val auth: FirebaseAuth = Firebase.auth
+    private val database: DatabaseReference = Firebase.database.getReference("users")
+
+    private val registeredUsers = mutableListOf<User>()
 
     init {
-        registeredUsers[0] = User("Usuario Test 1", "test1", "Test1234", "Usuario Sordo / Hipoacúsico")
-        registeredUsers[1] = User("Usuario Test 2", "test2", "Test1234", "Usuario Oyente")
-        registeredUsers[2] = User("Usuario Test 3", "test3", "Test1234", "Usuario Sordo / Hipoacúsico")
+        database.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                registeredUsers.clear()
+                for (child in snapshot.children) {
+                    val user = child.getValue(User::class.java)
+                    if (user != null) {
+                        registeredUsers.add(user)
+                    }
+                }
+                Log.d("UserRepository", "Usuarios sincronizados: ${registeredUsers.size}")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.w("UserRepository", "Error al leer usuarios", error.toException())
+            }
+        })
     }
 
-    fun registerUser(newUser: User): Pair<Boolean, String> {
-        val exists = registeredUsers.filterNotNull().any { it.username == newUser.username }
-        if (exists) {
-            return Pair(false, "El nombre de usuario ya está registrado.")
-        }
-
-        val emptyIndex = registeredUsers.indexOfFirst { it == null }
-
-        if (emptyIndex != -1) {
-            registeredUsers[emptyIndex] = newUser
-            return Pair(true, "Registro exitoso.")
-        } else {
-            return Pair(false, "Límite máximo de 5 usuarios alcanzado.")
-        }
+    private fun sanitizeKey(username: String): String {
+        return username.trim().replace(".", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_")
     }
 
-    fun validateLogin(username: String, pass: String): Boolean {
-        return registeredUsers.filterNotNull().any { it.username == username && it.pass == pass }
+    private fun formatAuthEmail(username: String): String {
+        val clean = username.trim()
+        return if (clean.contains("@")) clean else "$clean@appsensorial.cl"
+    }
+
+    fun registerUserWithFirebase(
+        user: User,
+        pass: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val emailForAuth = formatAuthEmail(user.username)
+        auth.createUserWithEmailAndPassword(emailForAuth, pass)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val key = sanitizeKey(user.username)
+                    database.child(key).setValue(user)
+                        .addOnSuccessListener {
+                            onResult(true, "Usuario registrado exitosamente.")
+                        }
+                        .addOnFailureListener { e ->
+                            onResult(false, "Error al guardar perfil: ${e.localizedMessage}")
+                        }
+                } else {
+                    onResult(false, task.exception?.localizedMessage ?: "Error de registro")
+                }
+            }
+    }
+
+    fun loginWithFirebase(
+        username: String,
+        pass: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val emailForAuth = formatAuthEmail(username)
+        auth.signInWithEmailAndPassword(emailForAuth, pass)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onResult(true, "Autenticación exitosa")
+                } else {
+                    onResult(false, "Credenciales incorrectas")
+                }
+            }
+    }
+
+    fun sendPasswordReset(username: String, onResult: (Boolean, String) -> Unit) {
+        val emailForAuth = formatAuthEmail(username)
+        auth.sendPasswordResetEmail(emailForAuth)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onResult(true, "Instrucciones enviadas al correo.")
+                } else {
+                    onResult(false, task.exception?.localizedMessage ?: "Error al enviar correo.")
+                }
+            }
+    }
+
+    fun signOut() {
+        auth.signOut()
     }
 
     fun userExists(username: String): Boolean {
-        return registeredUsers.filterNotNull().any { it.username == username }
+        return registeredUsers.any { it.username == username }
     }
 }
 

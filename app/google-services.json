@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "407507495110",
+    "firebase_url": "https://app-sensorial-default-rtdb.firebaseio.com",
+    "project_id": "app-sensorial",
+    "storage_bucket": "app-sensorial.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407507495110:android:458d4ca5587f1b64cf0fc7",
+        "android_client_info": {
+          "package_name": "com.example.app_sensorial"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsWKioNDML30O4hli9Qobfv-3KmhGv6DE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
