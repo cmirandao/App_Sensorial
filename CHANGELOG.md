@@ -1,5 +1,17 @@
 # Changelog - App Sensorial
 
+## [4.0] - 2026-10-08
+### Añadido
+- **Tutorial interactivo (`TutorialView`):** Nueva vista de ayuda con tarjetas de instrucciones e integración nativa de Text-to-Speech (TTS) para lectura en voz alta.
+- **Historial persistente (`HistorialView`):** Nueva vista conectada en tiempo real a Firebase Realtime Database para consultar el registro de frases generadas.
+- **Guardado automático:** Integración en `EscribirView` y `HablarView` para enviar directamente las interacciones del usuario al nodo de historial en Firebase.
+- **Redirección a Mapas:** Nuevo Intent nativo (`ACTION_VIEW`) en `BuscarDispositivoView` para abrir las coordenadas geográficas capturadas directamente en la aplicación de Google Maps.
+- **Saludo personalizado:** Actualización del menú principal para consultar y renderizar el nombre real del usuario desde Firebase.
+
+### Modificado
+- **Seguridad en eliminación de cuentas:** Refactorización crítica en `UserRepository.eliminarCuenta`. Ahora verifica la eliminación exitosa de los datos en Realtime Database y del historial antes de proceder a borrar la credencial de autenticación (Auth).
+- **Navegación:** Actualización del `NavHost` y `HomeMenuView` para incluir y gestionar las rutas de las nuevas pantallas de Tutorial e Historial.
+
 ## [3.0] - 2026-10-04
 ### Añadido
 - **Autenticación:** Integración con Firebase Authentication para registro y login de usuarios.

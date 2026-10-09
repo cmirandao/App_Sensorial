@@ -3,6 +3,7 @@ package com.example.app_sensorial.ui.views
 import android.app.Activity
 import android.content.Intent
 import android.speech.RecognizerIntent
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -12,20 +13,41 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HablarView(onNavigateBack: () -> Unit) {
+    val context = LocalContext.current
     var recognizedText by remember { mutableStateOf("Toca el botón y pídele a la otra persona que hable...") }
+
+    fun guardarEnHistorial(texto: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val ref = FirebaseDatabase.getInstance().getReference("historial").child(userId)
+            val registro = mapOf("texto" to texto, "tipo" to "Hablar")
+            ref.push().setValue(registro).addOnSuccessListener {
+                Toast.makeText(context, "Voz guardada en historial", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     val speechRecognizerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            recognizedText = data?.get(0) ?: "No se reconoció el texto."
+            val capturado = data?.get(0)
+            if (!capturado.isNullOrBlank()) {
+                recognizedText = capturado
+                guardarEnHistorial(capturado)
+            } else {
+                recognizedText = "No se reconoció el texto."
+            }
         }
     }
 
@@ -55,16 +77,11 @@ fun HablarView(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Box(modifier = Modifier.padding(16.dp).fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = recognizedText,
-                        style = MaterialTheme.typography.headlineSmall
-                    )
+                    Text(text = recognizedText, style = MaterialTheme.typography.headlineSmall)
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))

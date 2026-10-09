@@ -1,4 +1,5 @@
 package com.example.app_sensorial.data
+
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -17,10 +18,8 @@ data class User(
 )
 
 class UserRepository {
-    // Instancias de Firebase
     private val auth: FirebaseAuth = Firebase.auth
     private val database: DatabaseReference = Firebase.database.getReference("users")
-
     private val registeredUsers = mutableListOf<User>()
 
     init {
@@ -35,7 +34,6 @@ class UserRepository {
                 }
                 Log.d("UserRepository", "Usuarios sincronizados: ${registeredUsers.size}")
             }
-
             override fun onCancelled(error: DatabaseError) {
                 Log.w("UserRepository", "Error al leer usuarios", error.toException())
             }
@@ -51,34 +49,22 @@ class UserRepository {
         return if (clean.contains("@")) clean else "$clean@appsensorial.cl"
     }
 
-    fun registerUserWithFirebase(
-        user: User,
-        pass: String,
-        onResult: (Boolean, String) -> Unit
-    ) {
+    fun registerUserWithFirebase(user: User, pass: String, onResult: (Boolean, String) -> Unit) {
         val emailForAuth = formatAuthEmail(user.username)
         auth.createUserWithEmailAndPassword(emailForAuth, pass)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val key = sanitizeKey(user.username)
                     database.child(key).setValue(user)
-                        .addOnSuccessListener {
-                            onResult(true, "Usuario registrado exitosamente.")
-                        }
-                        .addOnFailureListener { e ->
-                            onResult(false, "Error al guardar perfil: ${e.localizedMessage}")
-                        }
+                        .addOnSuccessListener { onResult(true, "Usuario registrado exitosamente.") }
+                        .addOnFailureListener { e -> onResult(false, "Error al guardar perfil: ${e.localizedMessage}") }
                 } else {
                     onResult(false, task.exception?.localizedMessage ?: "Error de registro")
                 }
             }
     }
 
-    fun loginWithFirebase(
-        username: String,
-        pass: String,
-        onResult: (Boolean, String) -> Unit
-    ) {
+    fun loginWithFirebase(username: String, pass: String, onResult: (Boolean, String) -> Unit) {
         val emailForAuth = formatAuthEmail(username)
         auth.signInWithEmailAndPassword(emailForAuth, pass)
             .addOnCompleteListener { task ->
@@ -100,6 +86,32 @@ class UserRepository {
                     onResult(false, task.exception?.localizedMessage ?: "Error al enviar correo.")
                 }
             }
+    }
+
+    // Eliminar cuenta de usuario
+    fun eliminarCuenta(username: String, onResult: (Boolean, String) -> Unit) {
+        val userAuth = auth.currentUser
+        if (userAuth != null) {
+            val key = sanitizeKey(username)
+            database.child(key).removeValue().addOnCompleteListener { dbTask ->
+                if (dbTask.isSuccessful) {
+                    // Borrar historial
+                    Firebase.database.getReference("historial").child(userAuth.uid).removeValue()
+                    // Eliminar autenticación
+                    userAuth.delete().addOnCompleteListener { authTask ->
+                        if (authTask.isSuccessful) {
+                            onResult(true, "Cuenta eliminada correctamente")
+                        } else {
+                            onResult(false, "Error al eliminar Auth: ${authTask.exception?.localizedMessage}")
+                        }
+                    }
+                } else {
+                    onResult(false, "Error al eliminar datos BD: ${dbTask.exception?.localizedMessage}")
+                }
+            }
+        } else {
+            onResult(false, "No hay sesión activa.")
+        }
     }
 
     fun signOut() {

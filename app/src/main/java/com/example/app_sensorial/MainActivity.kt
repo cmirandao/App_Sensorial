@@ -56,6 +56,8 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToEscribir = { navController.navigate("escribir") },
                                 onNavigateToHablar = { navController.navigate("hablar") },
                                 onNavigateToBuscar = { navController.navigate("buscar") },
+                                onNavigateToHistorial = { navController.navigate("historial") },
+                                onNavigateToTutorial = { navController.navigate("tutorial") },
                                 onNavigateToLogin = {
                                     navController.navigate("login") {
                                         popUpTo(0) { inclusive = true }
@@ -77,6 +79,16 @@ class MainActivity : ComponentActivity() {
                         // BUSCAR DISPOSITIVO (Geolocalización)
                         composable("buscar") {
                             BuscarDispositivoView(onNavigateBack = { navController.popBackStack() })
+                        }
+
+                        // HISTORIAL
+                        composable("historial") {
+                            HistorialView(onNavigateBack = { navController.popBackStack() })
+                        }
+
+                        // TUTORIAL
+                        composable("tutorial") {
+                            TutorialView(onNavigateBack = { navController.popBackStack() })
                         }
                     }
                 }

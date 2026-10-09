@@ -1,6 +1,7 @@
 package com.example.app_sensorial.ui.views
 
 import android.speech.tts.TextToSpeech
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -10,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -19,16 +22,26 @@ fun EscribirView(onNavigateBack: () -> Unit) {
     var textToSpeak by remember { mutableStateOf("") }
     var tts: TextToSpeech? by remember { mutableStateOf(null) }
 
-    // Inicialización TTS y DisposableEffect para liberar memoria al salir
     DisposableEffect(context) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.Builder().setLanguage("es").setRegion("ES").build()
+                tts?.language = Locale.Builder().setLanguage("es").setRegion("CL").build()
             }
         }
         onDispose {
             tts?.stop()
             tts?.shutdown()
+        }
+    }
+
+    fun guardarEnHistorial(texto: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null && texto.isNotBlank()) {
+            val ref = FirebaseDatabase.getInstance().getReference("historial").child(userId)
+            val registro = mapOf("texto" to texto, "tipo" to "Escribir")
+            ref.push().setValue(registro).addOnSuccessListener {
+                Toast.makeText(context, "Guardado en historial", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -72,18 +85,16 @@ fun EscribirView(onNavigateBack: () -> Unit) {
                 onClick = {
                     if (textToSpeak.isNotBlank()) {
                         tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, null)
+                        guardarEnHistorial(textToSpeak)
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text("Reproducir Voz")
+                Text("Reproducir Voz y Guardar")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = { textToSpeak = "" },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            OutlinedButton(onClick = { textToSpeak = "" }, modifier = Modifier.fillMaxWidth()) {
                 Text("Borrar todo")
             }
         }
